@@ -21,7 +21,7 @@ class Linkedout(object):
     		'q': 'slug',
     		'version': '2',
 		}, headers={
-			'accept': 'application/vnd.linkedin.normalized+json+2.1' # will not return 'includes' without this header
+			'accept': 'application/vnd.linkedin.normalized+json+2.1' # will not return 'included' without this header
 		}).content)
 
 	def check_validity(self):
@@ -54,11 +54,23 @@ class Linkedout(object):
 				'q': 'slug',
 				'slug': slug
 			}, headers={
-				'accept': 'application/vnd.linkedin.normalized+json+2.1'
+				'accept': 'application/vnd.linkedin.normalized+json+2.1' # will not return 'included' without this header
 			}).json()
+		
+		# indexing the completed videos
+		
+		completed_videos = []
+		for video in deco_json['included']:
+			if video['$type'] == 'com.linkedin.learning.api.interaction.ConsistentBasicVideoViewingStatus':
+				if video['details'] is not None:
+					if video['details']['statusType'] == 'COMPLETED':
+						completed_videos.append(video['cachingKey'])
+		
 		for video in deco_json['included']:
 			if video['$type'] == 'com.linkedin.learning.api.deco.content.Video':
-				logger.debug('Watching ' + video['title'])
+				if video['*lyndaVideoViewingStatus'] not in completed_videos:
+					logger.debug('Watching ' + video['title'] + ' ...')
+					self.watch_video()
 
 @logger.catch
 def main():
