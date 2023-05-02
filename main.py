@@ -9,7 +9,7 @@ class Linkedout(object):
 		self.session.headers.update(config.HEADERS)
 		self.session.cookies.update(config.COOKIES)
 		self.slug = slug
-		self.get_course_details()
+		self.check_validity()
 	
 	def get_course_details(self):
 		s = self.session.get(url=config.BASE_URL + 'detailedLearningPaths', params={
@@ -20,10 +20,19 @@ class Linkedout(object):
 		logger.info(s)
 
 	def check_validity(self):
-		s = self.session.post(url=config.BASE_URL + )
+		s = self.session.get(url=config.BASE_URL + 'me', params={
+				'q': 'inProgress'
+			})
+		if 'CSRF' in s.text:
+			logger.error("Incorrect credentials! Please ensure CSRF token matches JSESSIONID")
+			sys.exit(1)
+		
 
 @logger.catch
 def main():
+	if len(sys.argv) < 2:
+		logger.error("Course slug not specified!")
+		return
 	slug = sys.argv[1]
 	linkedout = Linkedout(slug)
 
