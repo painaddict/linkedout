@@ -11,3 +11,4 @@ HEADERS = {
 }
 
 BASE_URL = "https://www.linkedin.com/learning-api/"
+TRACK_URL = "https://www.linkedin.com/li/track"
