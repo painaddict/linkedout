@@ -1,5 +1,6 @@
 import sys, json
 import requests
+import datetime
 from loguru import logger
 import config
 
@@ -8,25 +9,35 @@ class Linkedout(object):
 		self.session = requests.Session()
 		self.session.headers.update(config.HEADERS)
 		self.session.cookies.update(config.COOKIES)
-		self.slug = slug
-		self.check_validity()
+		self.course_slug = slug
+		self.check_validity() # check if cookies are valid
+
+		self.get_course_details()
+		self.parse_course()
 	
 	def get_course_details(self):
-		s = self.session.get(url=config.BASE_URL + 'detailedLearningPaths', params={
-    		'learningPathSlug': self.slug,
+		self.course_json = json.loads(self.session.get(url=config.BASE_URL + 'detailedLearningPaths', params={
+    		'learningPathSlug': self.course_slug,
     		'q': 'slug',
     		'version': '2',
-		}).json()
-		logger.info(s)
+		}, headers={
+			'accept': 'application/vnd.linkedin.normalized+json+2.1' # will not return 'includes' without this header
+		}).content)
 
 	def check_validity(self):
 		s = self.session.get(url=config.BASE_URL + 'me', params={
 				'q': 'inProgress'
 			})
 		if 'CSRF' in s.text:
-			logger.error("Incorrect credentials! Please ensure CSRF token matches JSESSIONID")
+			logger.error('Incorrect credentials! Please ensure CSRF token matches JSESSIONID')
 			sys.exit(1)
-		
+	
+	def parse_course(self):
+		self.course_title = self.course_json['data']['elements'][0]['title']
+		self.duration = str(datetime.timedelta(seconds = self.course_json['data']['elements'][0]['contentDurationInSeconds']))
+		logger.info("Course Name: " + self.course_title)
+		logger.info("Duration: " + self.duration)
+
 
 @logger.catch
 def main():
