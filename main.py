@@ -1,4 +1,5 @@
-import sys, json
+import sys, json, time
+import base64
 import requests
 import datetime
 from loguru import logger
@@ -84,16 +85,32 @@ class Linkedout(object):
 		self.watch_video(video_json)
 
 	def watch_video(self, video_json): # where the magic happens
+		
+		timex = int(time.time() * 1000)
+
+		for element in video_json['included']:
+			if element.get('$type') == 'com.linkedin.learning.api.deco.content.Video':
+				application_viewer_urn = element['*lyndaVideoViewingStatus']
+				video_length = int(element['duration']['duration'])
+				tracking_id = element['trackingId']
+				media_tracking_id = element['presentation']['videoPlay']['videoPlayMetadata']['trackingId']
+				object_urn = element['trackingUrn']
+				media_url = element['presentation']['videoPlay']['videoPlayMetadata']['adaptiveStreams'][0]['masterPlaylists'][0]['url']
+
+		media_tracking_id_array = []
+		for x in base64.b64decode(media_tracking_id):
+			media_tracking_id_array.append(int(oct(x).replace('0o', '')))
+				
 		post_json = {
 			'eventBody': {
 				'contentProgressState': 'COMPLETED',
 				'previousContentProgressState': 'IN_PROGRESS',
-				'contextTrackingId': '',
-				'createdTime': '',
-				'durationInSecondsViewed': '',
+				'contextTrackingId': tracking_id,
+				'createdTime': timex,
+				'durationInSecondsViewed': video_length,
 				'mediaTrackingObject': {
-					'objectUrn': '',
-					'trackingId': ''
+					'objectUrn': object_urn,
+					'trackingId': media_tracking_id
 				},
 				'playerState': {
 					'bitrate': None,
@@ -104,11 +121,11 @@ class Linkedout(object):
 					'isAudioOnly': False,
 					'isPlaying': True,
 					'isVisible': True,
-					'length': '',
+					'length': video_length,
 					'speed': 1,
-					'timeElapsed': '',
+					'timeElapsed': video_length,
 					'volume': 100,
-					'mediaUrl': '',
+					'mediaUrl': media_url,
 					'mediaLiveState': 'PRE_RECORDED'
 				},
 				'videoProgressStateMetric': 'NON_SCRUB_VIDEO_TIME_WATCHED',
@@ -117,17 +134,17 @@ class Linkedout(object):
 						'pageUrn': 'urn:li:page:d_learning_content',
 						'trackingId': ''
 					},
-					'time': '',
+					'time': timex,
 					'version': '1.1.3155', # hardcoded
 					'server': '',
 					'service': '',
 					'guid': '', # ????
 					'memberId': 0,
-					'applicationViewerUrn': '',
+					'applicationViewerUrn': application_viewer_urn,
 					'clientApplicationInstance': {
 						'applicationUrn': 'urn:li:application:(learning-web,learning-web)',
 						'version': '1.1.3155',
-						'trackingId': [] #some array
+						'trackingId': media_tracking_id_array # octal array of base-64 tracking id
 					}
 				},
 				'requestHeader': {
@@ -147,6 +164,8 @@ class Linkedout(object):
 				'shouldAnonymizeMemberId': True
 			}
 		}
+		s = self.session.post(url=config.TRACK_URL, data=post_json)
+		print(s.status_code)
 
 @logger.catch
 def main():
