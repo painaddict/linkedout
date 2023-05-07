@@ -1,5 +1,5 @@
 import sys, json, time
-import base64
+import base64, gzip
 import requests
 import datetime
 from loguru import logger
@@ -101,7 +101,7 @@ class Linkedout(object):
 		for x in base64.b64decode(media_tracking_id):
 			media_tracking_id_array.append(int(oct(x).replace('0o', '')))
 				
-		post_json = {
+		complete_post_json = [{
 			'eventBody': {
 				'contentProgressState': 'COMPLETED',
 				'previousContentProgressState': 'IN_PROGRESS',
@@ -110,7 +110,7 @@ class Linkedout(object):
 				'durationInSecondsViewed': video_length,
 				'mediaTrackingObject': {
 					'objectUrn': object_urn,
-					'trackingId': media_tracking_id
+					'trackingId': tracking_id
 				},
 				'playerState': {
 					'bitrate': None,
@@ -132,7 +132,7 @@ class Linkedout(object):
 				'header': {
 					'pageInstance': {
 						'pageUrn': 'urn:li:page:d_learning_content',
-						'trackingId': ''
+						'trackingId': media_tracking_id
 					},
 					'time': timex,
 					'version': '1.1.3155', # hardcoded
@@ -163,9 +163,15 @@ class Linkedout(object):
 				'topicName': 'LearningContentClientProgressStateChangeEvent',
 				'shouldAnonymizeMemberId': True
 			}
-		}
-		s = self.session.post(url=config.TRACK_URL, data=post_json)
+		}]
+		s = self.session.post(url=config.TRACK_URL, data=json.dumps(complete_post_json), headers={
+				"Accept-Language": "en-US,en;q=0.9",
+				"content-type": "text/plain;charset=UTF-8"
+			})
+		print(s.content)
 		print(s.status_code)
+		print(s.request.body)
+
 
 @logger.catch
 def main():
