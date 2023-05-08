@@ -149,13 +149,107 @@ class Linkedout(object):
 			},
 			'eventInfo': {
 				'appId': 'com.linkedin.web.learning',
-				'eventName': 'LearningContentClientProgressStateChangeEvent',
-				'topicName': 'LearningContentClientProgressStateChangeEvent',
+				'eventName': 'MediaInitializationStartEvent',
+				'topicName': 'MediaInitializationStartEvent',
+				'shouldAnonymizeMemberId': True
+			}
+		},
+		{
+			'eventBody': {
+				'contentTrackableObject': {
+					'objectUrn': object_urn,
+					'trackingId': tracking_id
+				},
+				'header': {
+					'pageInstance': {
+						'pageUrn': 'urn:li:page:d_learning_content',
+						'trackingId': media_tracking_id
+					},
+					'time': timex(),
+					'version': config.VERSION,
+					'server': '',
+					'service': '',
+					'guid': 'random', # ????
+					'memberId': 0,
+					'applicationViewerUrn': application_viewer_urn,
+					'clientApplicationInstance': {
+						'applicationUrn': 'urn:li:application:(learning-web,learning-web)',
+						'version': config.VERSION,
+						'trackingId': media_tracking_id_array # octal array of base-64 tracking id
+					}
+				},
+				'requestHeader': {
+					'interfaceLocale': 'en_US',
+					'pageKey': 'd_learning_content',
+					'path': '/learning/creating-a-business-plan-2/what-is-a-business-plan', # does this matter?
+					'referer': 'https://www.linkedin.com/learning-login/b2c/login',
+					'isFlushOnCloseBrowserTabEnabled': True,
+					'isBrowserPersistentRetryEnabled': False,
+					'trackingCode': 'd_learning_content'
+				}
+			},
+			'eventInfo': {
+				'appId': 'com.linkedin.web.learning',
+				'eventName': 'LearningContentViewEvent',
+				'topicName': 'LearningContentViewEvent',
 				'shouldAnonymizeMemberId': True
 			}
 		}]
 
-		
+		buffering_post_json = [{
+			'eventBody': {
+				'mobileHeader': None,
+				'mediaHeader': {
+					'deliveryMode': 'PROGRESSIVE',
+					'playerType': 'HTML5',
+					'mediaType': 'VIDEO',
+					'accountAccessType': 'ENTERPRISE',
+					'mediaSource': 'learning'
+				},
+				'mediaTrackingObject': {
+					'objectUrn': object_urn,
+					'trackingId': tracking_id
+				},
+				'mediaLiveState': None,
+				'bufferingType': 'INIT',
+				'initializationStartTime': timex(),
+				'bufferingStartTime': timex(),
+				'header': {
+					'pageInstance': {
+						'pageUrn': 'urn:li:page:d_learning_content',
+						'trackingId': media_tracking_id
+					},
+					'time': timex(),
+					'version': config.VERSION,
+					'server': '',
+					'service': '',
+					'guid': 'random', # ????
+					'memberId': 0,
+					'applicationViewerUrn': application_viewer_urn,
+					'clientApplicationInstance': {
+						'applicationUrn': 'urn:li:application:(learning-web,learning-web)',
+						'version': config.VERSION,
+						'trackingId': media_tracking_id_array # octal array of base-64 tracking id
+					}
+				},
+				'requestHeader': {
+					'interfaceLocale': 'en_US',
+					'pageKey': 'd_learning_content',
+					'path': '/learning/creating-a-business-plan-2/what-is-a-business-plan', # does this matter?
+					'referer': 'https://www.linkedin.com/learning-login/b2c/login',
+					'isFlushOnCloseBrowserTabEnabled': True,
+					'isBrowserPersistentRetryEnabled': False,
+					'trackingCode': 'd_learning_content'
+				}
+			},
+			'eventInfo': {
+				'appId': 'com.linkedin.web.learning',
+				'eventName': 'MediaBufferingStartEvent',
+				'topicName': 'MediaBufferingStartEvent',
+				'shouldAnonymizeMemberId': True
+			}
+		}]
+
 		complete_post_json = [{
 			'eventBody': {
 				'contentProgressState': 'COMPLETED',
@@ -224,17 +318,43 @@ class Linkedout(object):
 		in_progress_post_json[0]['eventBody']['contentProgressState'] = 'IN_PROGRESS'
 		in_progress_post_json[0]['eventBody']['previousContentProgressState'] = None	
 
+		init_end_post_json = init_post_json.copy()
+		init_end_post_json[0]['eventInfo']['eventName'] = 'MediaInitializationEndEvent'
+		init_end_post_json[0]['eventInfo']['topicName'] = 'MediaInitializationEndEvent'
+
+		s = self.session.post(url=config.TRACK_URL, data=json.dumps(init_post_json), headers={
+				"Accept-Language": "en-US,en;q=0.9",
+				"content-type": "text/plain;charset=UTF-8"
+			})
+		print(s.status_code)
+		print(s.request.body)
+
+		s = self.session.post(url=config.TRACK_URL, data=json.dumps(init_end_post_json), headers={
+				"Accept-Language": "en-US,en;q=0.9",
+				"content-type": "text/plain;charset=UTF-8"
+			})
+		print(s.status_code)
+		print(s.request.body)
+
+		s = self.session.post(url=config.TRACK_URL, data=json.dumps(buffering_post_json), headers={
+				"Accept-Language": "en-US,en;q=0.9",
+				"content-type": "text/plain;charset=UTF-8"
+			})
+		print(s.content)
+		print(s.status_code)
+		print(s.request.body)
+
 		s = self.session.post(url=config.TRACK_URL, data=json.dumps(in_progress_post_json), headers={
 				"Accept-Language": "en-US,en;q=0.9",
 				"content-type": "text/plain;charset=UTF-8"
 			})
+		print(s.status_code)
 		print(s.request.body)
 
 		s = self.session.post(url=config.TRACK_URL, data=json.dumps(complete_post_json), headers={
 				"Accept-Language": "en-US,en;q=0.9",
 				"content-type": "text/plain;charset=UTF-8"
 			})
-		print(s.content)
 		print(s.status_code)
 		print(s.request.body)
 
