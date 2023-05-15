@@ -1,4 +1,5 @@
 import sys, json, time
+import copy
 import base64, gzip
 import requests
 import datetime
@@ -314,11 +315,11 @@ class Linkedout(object):
 			}
 		}]
 
-		in_progress_post_json = complete_post_json.copy()
+		in_progress_post_json = copy.deepcopy(complete_post_json)
 		in_progress_post_json[0]['eventBody']['contentProgressState'] = 'IN_PROGRESS'
 		in_progress_post_json[0]['eventBody']['previousContentProgressState'] = None	
 
-		init_end_post_json = init_post_json.copy()
+		init_end_post_json = copy.deepcopy(init_post_json)
 		init_end_post_json[0]['eventInfo']['eventName'] = 'MediaInitializationEndEvent'
 		init_end_post_json[0]['eventInfo']['topicName'] = 'MediaInitializationEndEvent'
 
